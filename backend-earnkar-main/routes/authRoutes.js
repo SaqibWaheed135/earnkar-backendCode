@@ -20,7 +20,7 @@ router.get('/withdrawals', getWithdrawals);
 router.post('/videos/:id/like', LikeVideo);
 router.post('/videos/:id/comment', CommentVideo);
 router.post('/videos/:id/share', ShareVideo);
-router.get('/videos', getVideos);
+router.get('/getVideos', getVideos);
 
 
 // router.get('/withdrawals', (req, res) => {
