@@ -563,6 +563,7 @@ exports.getVideos = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 exports.LikeVideo = async (req, res) => {
   try {
     const videoId = req.params.id;
