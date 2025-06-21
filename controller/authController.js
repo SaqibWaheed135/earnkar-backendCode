@@ -642,7 +642,7 @@ exports.AddVideo = async (req, res) => {
   }
 
   try {
-    const result = await VideoModel.create({
+    const result = await Video.create({
       uri,
       user,
       description,
