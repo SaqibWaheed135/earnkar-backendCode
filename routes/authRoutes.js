@@ -25,7 +25,7 @@ router.post('/uploadVideo', handler);
 router.post('/addVideo', AddVideo);
 router.post('/approveVideo', approveVideo);
 router.get('/getApprovedVideos', getApprovedVideos);
-router.delete('/deleteVideo/:videoId', deleteVideo);
+router.delete('/deleteVideo/:id', deleteVideo);
 
 
 // router.get('/withdrawals', (req, res) => {
