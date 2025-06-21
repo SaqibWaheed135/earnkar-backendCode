@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { signup, login, getProfile, updateProfile, uploadProfileImage, reward, clerkUserHandler, googleSignIn, withdraw, withdrawCompletion, getWithdrawals, getAllUsers, deleteUser, LikeVideo, CommentVideo, ShareVideo,getVideos,handler,addVideo } = require('../controller/authController');
+const { signup, login, getProfile, updateProfile, uploadProfileImage, reward, clerkUserHandler, googleSignIn, withdraw, withdrawCompletion, getWithdrawals, getAllUsers, deleteUser, LikeVideo, CommentVideo, ShareVideo,getVideos,handler,AddVideo } = require('../controller/authController');
 const protect = require('../middleware/authmiddlerware');
 
 router.post('/signup', signup);
