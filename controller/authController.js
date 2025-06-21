@@ -772,14 +772,14 @@ exports.getApprovedVideos = async (req, res) => {
 
 
 exports.deleteVideo = async (req, res) => {
-  const { videoId } = req.params;
+  const { id } = req.params;
 
-  if (!videoId) {
+  if (!id) {
     return res.status(400).json({ error: 'Missing video ID' });
   }
 
   try {
-    const deleted = await Video.findByIdAndDelete(videoId);
+    const deleted = await Video.findByIdAndDelete(id);
 
     if (!deleted) {
       return res.status(404).json({ error: 'Video not found' });
@@ -791,4 +791,3 @@ exports.deleteVideo = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
