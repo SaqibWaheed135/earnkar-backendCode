@@ -635,3 +635,25 @@ exports.handler = async (req, res) => {
   }
 };
 
+exports.AddVideo = async (req, res) => {
+  const { uri, user, description } = req.body;
+  if (!uri || !user || !description) {
+    return res.status(400).json({ error: 'Missing fields' });
+  }
+
+  try {
+    const result = await VideoModel.create({
+      uri,
+      user,
+      description,
+      likes: 0,
+      comments: [],
+      shares: 0,
+    });
+
+    res.status(200).json({ success: true, video: result });
+  } catch (err) {
+    console.error('Failed to save video:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
