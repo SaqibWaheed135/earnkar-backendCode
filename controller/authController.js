@@ -610,6 +610,62 @@ const s3 = new AWS.S3({
   signatureVersion: 'v4',
 });
 
+// exports.handler = async (req, res) => {
+//   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+//   const { fileName, fileType } = req.body;
+
+//   const key = `uploads/${Date.now()}_${fileName}`;
+
+//   const params = {
+//     Bucket: 'earnkar',
+//     Key: key,
+//     Expires: 60,
+//     ContentType: fileType,
+//     ACL: 'public-read',
+//   };
+
+//   try {
+//     const uploadUrl = await s3.getSignedUrlPromise('putObject', params);
+//     const fileUrl = `https://s3.ap-southeast-1.wasabisys.com/earnkar/${key}`;
+
+//     return res.status(200).json({ uploadUrl, fileUrl });
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
+
+// exports.AddVideo = async (req, res) => {
+//   const { uri, user, description } = req.body;
+//   if (!uri || !user || !description) {
+//     return res.status(400).json({ error: 'Missing fields' });
+//   }
+
+//   try {
+//     const result = await Video.create({
+//       uri,
+//       user,
+//       description,
+//       likes: 0,
+//       comments: [],
+//       shares: 0,
+//     });
+
+//     res.status(200).json({ success: true, video: result });
+//   } catch (err) {
+//     console.error('Failed to save video:', err);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// };
+
+const s3 = new AWS.S3({
+  accessKeyId: '9W9WEKL0GQDEABGCHTE9',
+  secretAccessKey: 'QeLssFsizJ38tzBADsewT0R5qgJfSSukGF9bd4Cz',
+  endpoint: 'https://s3.ap-southeast-1.wasabisys.com', // Wasabi endpoint
+  region: 'ap-southeast-1',
+  signatureVersion: 'v4',
+});
+
 exports.handler = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -617,19 +673,27 @@ exports.handler = async (req, res) => {
 
   const key = `uploads/${Date.now()}_${fileName}`;
 
-  const params = {
+  const uploadParams = {
     Bucket: 'earnkar',
     Key: key,
     Expires: 60,
     ContentType: fileType,
-    ACL: 'public-read',
+    // ACL: 'public-read', ❌ REMOVE THIS
   };
 
   try {
-    const uploadUrl = await s3.getSignedUrlPromise('putObject', params);
-    const fileUrl = `https://s3.ap-southeast-1.wasabisys.com/earnkar/${key}`;
+    // Step 1: Generate signed PUT URL for uploading
+    const uploadUrl = await s3.getSignedUrlPromise('putObject', uploadParams);
 
-    return res.status(200).json({ uploadUrl, fileUrl });
+    // Step 2: Prepare signed GET URL to access uploaded file privately
+    const getUrlParams = {
+      Bucket: 'earnkar',
+      Key: key,
+      Expires: 3600, // 1 hour validity
+    };
+    const fileUrl = await s3.getSignedUrlPromise('getObject', getUrlParams);
+
+    return res.status(200).json({ uploadUrl, fileUrl, key });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -637,6 +701,7 @@ exports.handler = async (req, res) => {
 
 exports.AddVideo = async (req, res) => {
   const { uri, user, description } = req.body;
+
   if (!uri || !user || !description) {
     return res.status(400).json({ error: 'Missing fields' });
   }
