@@ -5,6 +5,7 @@ const Video = require('../models/Video'); // Path may vary
 const multer = require('multer');
 const path = require('path');
 const Withdrawal = require('../models/Withdraw');
+const AWS = require('aws-sdk');
 
 // exports.signup = async (req, res) => {
 //   const { firstName, lastName, email, password } = req.body;
@@ -600,5 +601,37 @@ exports.ShareVideo = async (req, res) => {
   const { id } = req.params;
   await Video.findByIdAndUpdate(id, { $inc: { shares: 1 } });
   res.json({ success: true });
+};
+const s3 = new AWS.S3({
+  accessKeyId: '9W9WEKL0GQDEABGCHTE9',
+  secretAccessKey: 'QeLssFsizJ38tzBADsewT0R5qgJfSSukGF9bd4Cz',
+  endpoint: 'https://s3.ap-southeast-1.wasabisys.com', // Wasabi endpoint
+  region: 'ap-southeast-1',
+  signatureVersion: 'v4',
+});
+
+exports.handler = async (req, res) => {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const { fileName, fileType } = req.body;
+
+  const key = `uploads/${Date.now()}_${fileName}`;
+
+  const params = {
+    Bucket: 'earnkar',
+    Key: key,
+    Expires: 60,
+    ContentType: fileType,
+    ACL: 'public-read',
+  };
+
+  try {
+    const uploadUrl = await s3.getSignedUrlPromise('putObject', params);
+    const fileUrl = `https://s3.ap-southeast-1.wasabisys.com/earnkar/${key}`;
+
+    return res.status(200).json({ uploadUrl, fileUrl });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
 };
 
