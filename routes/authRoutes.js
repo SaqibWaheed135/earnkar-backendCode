@@ -24,7 +24,7 @@ router.get('/getVideos', getVideos);
 router.post('/uploadVideo', handler);
 router.post('/addVideo', AddVideo);
 router.post('/approveVideo', approveVideo);
-router.get('/getApprovedVideos', approveVideo);
+router.get('/getApprovedVideos', getApprovedVideos);
 
 
 // router.get('/withdrawals', (req, res) => {
