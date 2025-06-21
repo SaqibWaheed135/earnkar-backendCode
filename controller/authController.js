@@ -757,11 +757,16 @@ exports.approveVideo = async (req, res) => {
 };
 
 exports.getApprovedVideos = async (req, res) => {
+  console.log('getApprovedVideos called');
   try {
+    console.log('Attempting to fetch approved videos...');
     const videos = await Video.find({ isApproved: true }).sort({ createdAt: -1 });
+    console.log('Videos found:', videos.length);
     res.status(200).json({ success: true, videos });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error in getApprovedVideos:', error.message);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 };
 
