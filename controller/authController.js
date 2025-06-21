@@ -730,3 +730,38 @@ exports.AddVideo = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.approveVideo = async (req, res) => {
+  const { videoId } = req.body;
+
+  if (!videoId) {
+    return res.status(400).json({ error: 'Video ID is required' });
+  }
+
+  try {
+    const video = await Video.findByIdAndUpdate(
+      videoId,
+      { isApproved: true },
+      { new: true }
+    );
+
+    if (!video) {
+      return res.status(404).json({ error: 'Video not found' });
+    }
+
+    res.status(200).json({ success: true, video });
+  } catch (error) {
+    console.error('Error approving video:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.getApprovedVideos = async (req, res) => {
+  try {
+    const videos = await Video.find({ isApproved: true }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, videos });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
