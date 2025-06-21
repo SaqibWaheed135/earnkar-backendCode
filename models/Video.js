@@ -7,6 +7,7 @@ const videoSchema = new mongoose.Schema({
   avatar: String, 
   description: String,
   likes: { type: Number, default: 0 },
+  likedBy: [String], // ✅ store user IDs that liked the video
   comments: [
     {
       user: String,
