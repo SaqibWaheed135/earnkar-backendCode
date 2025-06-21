@@ -658,13 +658,6 @@ const s3 = new AWS.S3({
 //   }
 // };
 
-const s3 = new AWS.S3({
-  accessKeyId: '9W9WEKL0GQDEABGCHTE9',
-  secretAccessKey: 'QeLssFsizJ38tzBADsewT0R5qgJfSSukGF9bd4Cz',
-  endpoint: 'https://s3.ap-southeast-1.wasabisys.com', // Wasabi endpoint
-  region: 'ap-southeast-1',
-  signatureVersion: 'v4',
-});
 
 exports.handler = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
