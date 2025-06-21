@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const videoSchema = new mongoose.Schema({
   uri: String,
   user: String,
+  avatar: String, 
   description: String,
   likes: { type: Number, default: 0 },
   comments: [
