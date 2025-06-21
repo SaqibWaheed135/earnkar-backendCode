@@ -16,6 +16,8 @@ const videoSchema = new mongoose.Schema({
     },
   ],
   shares: { type: Number, default: 0 },
+  isApproved: { type: Boolean, default: false }, // ✅ new field
+
   createdAt: { type: Date, default: Date.now },
 });
 
