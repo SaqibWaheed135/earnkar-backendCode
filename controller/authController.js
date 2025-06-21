@@ -567,31 +567,40 @@ exports.getVideos = async (req, res) => {
 
 
 exports.likeVideo = async (req, res) => {
-  const { videoId } = req.body;
+  const { videoId, userId } = req.body;
 
-  if (!videoId) {
-    return res.status(400).json({ error: 'Video ID is required' });
+  if (!videoId || !userId) {
+    return res.status(400).json({ error: 'videoId and userId are required' });
   }
 
   try {
-    const updatedVideo = await Video.findByIdAndUpdate(
-      videoId,
-      { $inc: { likes: 1 } }, // increment likes
-      { new: true }
-    );
+    const video = await Video.findById(videoId);
+    if (!video) return res.status(404).json({ error: 'Video not found' });
 
-    if (!updatedVideo) {
-      return res.status(404).json({ error: 'Video not found' });
+    const alreadyLiked = video.likedBy.includes(userId);
+
+    if (alreadyLiked) {
+      // Dislike
+      video.likedBy.pull(userId);
+      video.likes = Math.max(0, video.likes - 1);
+    } else {
+      // Like
+      video.likedBy.push(userId);
+      video.likes += 1;
     }
 
-    res.status(200).json({ success: true, video: updatedVideo });
+    await video.save();
+
+    res.status(200).json({
+      success: true,
+      video,
+      liked: !alreadyLiked,
+    });
   } catch (error) {
-    console.error('Error liking video:', error);
+    console.error('Error toggling like:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
-
 
 exports.CommentVideo = async (req, res) => {
   const { id } = req.params;
