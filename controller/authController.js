@@ -565,27 +565,32 @@ exports.getVideos = async (req, res) => {
   }
 };
 
-exports.LikeVideo = async (req, res) => {
+
+exports.likeVideo = async (req, res) => {
+  const { videoId } = req.body;
+
+  if (!videoId) {
+    return res.status(400).json({ error: 'Video ID is required' });
+  }
+
   try {
-    const videoId = req.params.id;
+    const updatedVideo = await Video.findByIdAndUpdate(
+      videoId,
+      { $inc: { likes: 1 } }, // increment likes
+      { new: true }
+    );
 
-    // Check if ID is valid
-    if (!videoId) {
-      return res.status(400).json({ message: 'Video ID is required' });
+    if (!updatedVideo) {
+      return res.status(404).json({ error: 'Video not found' });
     }
 
-    const video = await Video.findByIdAndUpdate(videoId, { $inc: { likes: 1 } }, { new: true });
-
-    if (!video) {
-      return res.status(404).json({ message: 'Video not found' });
-    }
-
-    res.status(200).json({ success: true, likes: video.likes });
+    res.status(200).json({ success: true, video: updatedVideo });
   } catch (error) {
-    console.error('Error in LikeVideo controller:', error); // 👈 See error in your terminal
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error liking video:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 
 
 exports.CommentVideo = async (req, res) => {
