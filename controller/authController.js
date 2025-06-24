@@ -750,7 +750,7 @@ exports.AddVideo = async (req, res) => {
       likes: 0,
       comments: [],
       shares: 0,
-      hasApproved: isAdmin ? true : false,
+      isApproved: isAdmin ? true : false,
     });
 
     res.status(200).json({ success: true, video: result });
