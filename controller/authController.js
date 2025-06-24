@@ -696,7 +696,7 @@ exports.handler = async (req, res) => {
     const getUrlParams = {
       Bucket: 'earnkar',
       Key: key,
-      Expires: 3600, // 1 hour validity
+      Expires: 60 * 60 * 24 * 7,
     };
     const fileUrl = await s3.getSignedUrlPromise('getObject', getUrlParams);
 
