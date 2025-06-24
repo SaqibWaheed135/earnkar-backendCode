@@ -735,7 +735,7 @@ exports.handler = async (req, res) => {
 
 
 exports.AddVideo = async (req, res) => {
-  const { uri, user, avatar, description } = req.body;
+  const { uri, user, avatar, description,isAdmin  } = req.body;
 
   if (!uri || !user || !description || !avatar) {
     return res.status(400).json({ error: 'Missing fields' });
@@ -750,6 +750,7 @@ exports.AddVideo = async (req, res) => {
       likes: 0,
       comments: [],
       shares: 0,
+      hasApproved: isAdmin ? true : false,
     });
 
     res.status(200).json({ success: true, video: result });
