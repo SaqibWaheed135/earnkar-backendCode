@@ -673,65 +673,65 @@ const s3 = new AWS.S3({
 // };
 
 
-// exports.handler = async (req, res) => {
-//   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-//   const { fileName, fileType } = req.body;
-
-//   const key = `uploads/${Date.now()}_${fileName}`;
-
-//   const uploadParams = {
-//     Bucket: 'earnkar',
-//     Key: key,
-//     Expires: 60,
-//     ContentType: fileType,
-//     // ACL: 'public-read', ❌ REMOVE THIS
-//   };
-
-//   try {
-//     // Step 1: Generate signed PUT URL for uploading
-//     const uploadUrl = await s3.getSignedUrlPromise('putObject', uploadParams);
-
-//     // Step 2: Prepare signed GET URL to access uploaded file privately
-//     const getUrlParams = {
-//       Bucket: 'earnkar',
-//       Key: key,
-//       Expires: 3600, // 1 hour validity
-//     };
-//     const fileUrl = await s3.getSignedUrlPromise('getObject', getUrlParams);
-
-//     return res.status(200).json({ uploadUrl, fileUrl, key });
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// };
-
 exports.handler = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { fileName, fileType } = req.body;
+
   const key = `uploads/${Date.now()}_${fileName}`;
 
   const uploadParams = {
     Bucket: 'earnkar',
     Key: key,
-    Expires: 60, // 1 minute to upload
+    Expires: 60,
     ContentType: fileType,
-    ACL: 'public-read', // ✅ allows permanent public access
+    // ACL: 'public-read', ❌ REMOVE THIS
   };
 
   try {
-    // Step 1: Get upload URL
+    // Step 1: Generate signed PUT URL for uploading
     const uploadUrl = await s3.getSignedUrlPromise('putObject', uploadParams);
 
-    // Step 2: Build permanent public file URL
-    const fileUrl = `https://s3.ap-southeast-1.wasabisys.com/earnkar/${key}`;
+    // Step 2: Prepare signed GET URL to access uploaded file privately
+    const getUrlParams = {
+      Bucket: 'earnkar',
+      Key: key,
+      Expires: 3600, // 1 hour validity
+    };
+    const fileUrl = await s3.getSignedUrlPromise('getObject', getUrlParams);
 
     return res.status(200).json({ uploadUrl, fileUrl, key });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
+
+// exports.handler = async (req, res) => {
+//   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+//   const { fileName, fileType } = req.body;
+//   const key = `uploads/${Date.now()}_${fileName}`;
+
+//   const uploadParams = {
+//     Bucket: 'earnkar',
+//     Key: key,
+//     Expires: 60, // 1 minute to upload
+//     ContentType: fileType,
+//     ACL: 'public-read', // ✅ allows permanent public access
+//   };
+
+//   try {
+//     // Step 1: Get upload URL
+//     const uploadUrl = await s3.getSignedUrlPromise('putObject', uploadParams);
+
+//     // Step 2: Build permanent public file URL
+//     const fileUrl = `https://s3.ap-southeast-1.wasabisys.com/earnkar/${key}`;
+
+//     return res.status(200).json({ uploadUrl, fileUrl, key });
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
 
 
 exports.AddVideo = async (req, res) => {
