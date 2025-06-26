@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { signup, login, getProfile, updateProfile, uploadProfileImage, reward, clerkUserHandler, googleSignIn, withdraw, withdrawCompletion, getWithdrawals, getAllUsers, deleteUser, likeVideo, CommentVideo, ShareVideo,getVideos,handler,AddVideo,approveVideo,getApprovedVideos,deleteVideo } = require('../controller/authController');
+const { signup, login, getProfile, updateProfile, uploadProfileImage, reward, clerkUserHandler, googleSignIn, withdraw, withdrawCompletion, getWithdrawals, getAllUsers, deleteUser, likeVideo, CommentVideo, ShareVideo,getVideos,handler,AddVideo,approveVideo,getApprovedVideos,deleteVideo,getUserVideos } = require('../controller/authController');
 const protect = require('../middleware/authmiddlerware');
 
 router.post('/signup', signup);
@@ -26,6 +26,7 @@ router.post('/addVideo', AddVideo);
 router.post('/approveVideo', approveVideo);
 router.get('/getApprovedVideos', getApprovedVideos);
 router.delete('/deleteVideo/:id', deleteVideo);
+router.get("/videos/user/:username", getUserVideos);
 
 
 // router.get('/withdrawals', (req, res) => {
