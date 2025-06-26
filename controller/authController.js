@@ -735,9 +735,9 @@ exports.handler = async (req, res) => {
 
 
 exports.AddVideo = async (req, res) => {
-  const { uri, user, avatar, description,isAdmin  } = req.body;
+  const { uri, user, username ,avatar, description,isAdmin  } = req.body;
 
-  if (!uri || !user || !description || !avatar) {
+  if (!uri || !user || !username || !description || !avatar) {
     return res.status(400).json({ error: 'Missing fields' });
   }
 
@@ -745,6 +745,7 @@ exports.AddVideo = async (req, res) => {
     const result = await Video.create({
       uri,
       user,
+      username,
       avatar, // ✅ store avatar
       description,
       likes: 0,
