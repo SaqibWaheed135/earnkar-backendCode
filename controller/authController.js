@@ -825,16 +825,17 @@ exports.getUserVideos = async (req, res) => {
   const { username } = req.params;
 
   try {
-    console.log(`Fetching videos for user: ${username}`);
     const videos = await Video.find({ user: username }).sort({ createdAt: -1 });
 
-    if (videos.length === 0) {
-      return res.status(404).json({ success: false, message: "No videos found for this user" });
-    }
+    return res.status(200).json({
+      success: true,
+      videos,
+      message: videos.length === 0 ? "No videos found" : undefined
+    });
 
-    res.status(200).json({ success: true, videos });
   } catch (error) {
     console.error("Error in getUserVideos:", error.message);
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 };
+
