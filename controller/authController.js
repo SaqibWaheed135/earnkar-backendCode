@@ -839,3 +839,21 @@ exports.getUserVideos = async (req, res) => {
   }
 };
 
+exports.getUserVideosById = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const videos = await Video.find({ user: userId }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      videos,
+      message: videos.length === 0 ? "No videos found" : undefined
+    });
+
+  } catch (error) {
+    console.error("Error in getUserVideosById:", error.message);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+};
+
