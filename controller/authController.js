@@ -859,6 +859,7 @@ exports.getUserVideosById = async (req, res) => {
 };
 
 
+// POST /api/report
 exports.reportVideo = async (req, res) => {
   try {
     const { videoId, reporterId, reason, description } = req.body;
@@ -887,7 +888,7 @@ exports.reportVideo = async (req, res) => {
     console.error('❌ Report error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
-});
+};
 
 // GET /api/admin/reports
 exports.getReportVideo = async (req, res) => {
@@ -902,5 +903,6 @@ exports.getReportVideo = async (req, res) => {
     console.error('❌ Fetch reports error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
-});
+};
+
 
