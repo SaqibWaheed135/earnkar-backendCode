@@ -6,7 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const Withdrawal = require('../models/Withdraw');
 const AWS = require('aws-sdk');
-
+const Report = require('../models/Report');
 // exports.signup = async (req, res) => {
 //   const { firstName, lastName, email, password } = req.body;
 
@@ -857,4 +857,36 @@ exports.getUserVideosById = async (req, res) => {
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 };
+
+
+exports.reportVideo = async (req, res) => {
+  try {
+    const { videoId, reporterId, reason, description } = req.body;
+
+    if (!videoId || !reporterId || !reason) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // Optional: Prevent duplicate reports by same user on same video
+    const existing = await Report.findOne({ videoId, reporterId });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'You have already reported this video' });
+    }
+
+    const report = new Report({
+      videoId,
+      reporterId,
+      reason,
+      description
+    });
+
+    await report.save();
+
+    res.json({ success: true, message: 'Report submitted successfully' });
+  } catch (error) {
+    console.error('❌ Report error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 
