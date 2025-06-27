@@ -889,4 +889,18 @@ exports.reportVideo = async (req, res) => {
   }
 });
 
+// GET /api/admin/reports
+exports.getReportVideo = async (req, res) => {
+  try {
+    const reports = await Report.find()
+      .populate('videoId', 'description uri')
+      .populate('reporterId', 'username email')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, reports });
+  } catch (error) {
+    console.error('❌ Fetch reports error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
