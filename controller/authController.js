@@ -1129,15 +1129,15 @@ exports.reportVideo = async (req, res) => {
 exports.getReportVideo = async (req, res) => {
   try {
     const reports = await Report.find()
-      .populate('videoId', 'description uri')
-      .populate('reporterId', 'username email')
+      .populate('videoId', 'description uri') // Make sure these fields exist in Video model
+      .populate('reporterId', 'username email firstName lastName') // Add more fields if needed
       .sort({ createdAt: -1 });
-
+    
+    console.log('Reports with populated data:', reports); // Debug log
     res.json({ success: true, reports });
   } catch (error) {
     console.error('❌ Fetch reports error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
-
 
