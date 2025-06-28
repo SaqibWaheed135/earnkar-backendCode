@@ -10,7 +10,7 @@ router.get('/verify-reset-token/:token',verifyResetToken);
 router.post('/reset-password', resetPassword);
 
 // Protected route for changing password when logged in
-//router.post('/change-password', changePassword);
+router.post('/change-password', changePassword);
 
 router.get('/profile', protect, getProfile);
 router.get('/getUsers', getAllUsers);
