@@ -610,18 +610,58 @@ exports.withdraw = async (req, res) => {
   }
 };
 exports.withdrawCompletion = async (req, res) => {
-  const withdrawal = await Withdrawal.findById(req.params.id);
+  try {
+    const withdrawal = await Withdrawal.findById(req.params.id);
 
-  if (!withdrawal) {
-    return res.status(404).json({ message: 'Withdrawal not found.' });
+    if (!withdrawal) {
+      return res.status(404).json({ message: 'Withdrawal not found.' });
+    }
+
+    // Only allow marking as completed if it's currently pending
+    if (withdrawal.status !== 'pending') {
+      return res.status(400).json({ message: `Withdrawal is already marked as ${withdrawal.status}.` });
+    }
+
+    // Mark as completed
+    withdrawal.status = 'completed';
+    withdrawal.completedAt = new Date();
+    await withdrawal.save();
+
+    const successMessage = withdrawal.method === 'CRYPTO'
+      ? `Withdrawal of ${withdrawal.amountUSD} USDT completed successfully.`
+      : `Withdrawal of ₹${withdrawal.amountINR?.toFixed(2) || '0.00'} completed successfully.`;
+
+    res.status(200).json({
+      message: successMessage,
+      withdrawal: {
+        id: withdrawal._id,
+        userId: withdrawal.userId,
+        method: withdrawal.method,
+        points: withdrawal.points,
+        status: withdrawal.status,
+        completedAt: withdrawal.completedAt,
+        ...(withdrawal.method === 'CRYPTO' && {
+          amountUSD: withdrawal.amountUSD,
+          walletAddress: withdrawal.walletAddress,
+          walletType: withdrawal.walletType,
+        }),
+        ...(withdrawal.method === 'BANK' && {
+          amountINR: withdrawal.amountINR,
+          accountHolderName: withdrawal.accountHolderName,
+          accountNumber: withdrawal.accountNumber,
+          ifscCode: withdrawal.ifscCode,
+          bankName: withdrawal.bankName,
+          branchName: withdrawal.branchName,
+        })
+      }
+    });
+
+  } catch (error) {
+    console.error('Withdrawal completion error:', error);
+    res.status(500).json({ message: 'Internal server error while marking withdrawal as completed.' });
   }
+};
 
-  withdrawal.status = 'completed';
-  withdrawal.completedAt = new Date();
-  await withdrawal.save();
-
-  res.status(200).json({ message: 'Withdrawal marked as completed.' });
-}
 
 exports.getWithdrawals = async (req, res) => {
   try {
