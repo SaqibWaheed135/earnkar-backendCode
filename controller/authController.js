@@ -609,32 +609,74 @@ exports.withdraw = async (req, res) => {
     res.status(500).json({ message: 'Internal server error during withdrawal process.' });
   }
 };
+
 exports.withdrawCompletion = async (req, res) => {
   try {
-    const withdrawal = await Withdrawal.findById(req.params.id);
+    console.log('Withdrawal completion request received for ID:', req.params.id);
+    
+    // Validate the ID parameter
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: 'Withdrawal ID is required.' });
+    }
+
+    // Check if ID is valid MongoDB ObjectId (if using MongoDB)
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid withdrawal ID format.' });
+    }
+
+    console.log('Looking for withdrawal with ID:', id);
+    
+    // Find the withdrawal by ID
+    const withdrawal = await Withdrawal.findById(id);
+    console.log('Found withdrawal:', withdrawal);
 
     if (!withdrawal) {
       return res.status(404).json({ message: 'Withdrawal not found.' });
     }
 
+    // Check if already completed
     if (withdrawal.status === 'completed') {
-      return res.status(400).json({ message: 'Already completed.' });
+      return res.status(400).json({ message: 'Withdrawal is already completed.' });
     }
 
+    console.log('Updating withdrawal status to completed...');
+    
+    // Update the withdrawal status
     withdrawal.status = 'completed';
     withdrawal.completedAt = new Date();
-    await withdrawal.save();
+    
+    // Save the updated withdrawal
+    const updatedWithdrawal = await withdrawal.save();
+    console.log('Updated withdrawal:', updatedWithdrawal);
 
     res.status(200).json({
-      message: 'Withdrawal marked as completed.',
-      withdrawal,
+      message: 'Withdrawal marked as completed successfully.',
+      withdrawal: updatedWithdrawal,
     });
-  } catch (err) {
-    console.error('Error in withdrawCompletion:', err);
-    res.status(500).json({ message: 'Internal server error while marking withdrawal as complete.' });
+
+  } catch (error) {
+    // Log the complete error for debugging
+    console.error('Error in withdrawCompletion:');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // Send appropriate error response
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid withdrawal ID format.' });
+    }
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Validation error: ' + error.message });
+    }
+    
+    res.status(500).json({ 
+      message: 'Internal server error while marking withdrawal as complete.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
-
 exports.getWithdrawals = async (req, res) => {
   try {
     const withdrawals = await Withdrawal.find(req.params.id)
