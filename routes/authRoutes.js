@@ -15,7 +15,8 @@ router.post('/reward', reward);
 router.post('/clerk-user', clerkUserHandler);
 router.post('/googleSignIn',googleSignIn);
 router.post('/withdraw', protect, withdraw);
-router.post('/withdrawals/:id/complete', withdrawCompletion);
+// router.post('/withdrawals/:id/complete', withdrawCompletion);
+router.put('/withdrawals/:withdrawalId/complete', withdrawCompletion);
 router.get('/withdrawals', getWithdrawals);
 router.post('/likeVideo', likeVideo); // 🔥 add this route
 router.post('/videos/:id/comment', CommentVideo);
