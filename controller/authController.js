@@ -610,71 +610,162 @@ exports.withdraw = async (req, res) => {
   }
 };
 
+// exports.withdrawCompletion = async (req, res) => {
+//   try {
+//     console.log('Withdrawal completion request received for ID:', req.params.id);
+    
+//     // Validate the ID parameter
+//     const { id } = req.params;
+//     if (!id) {
+//       return res.status(400).json({ message: 'Withdrawal ID is required.' });
+//     }
+
+//     // Check if ID is valid MongoDB ObjectId (if using MongoDB)
+//     const mongoose = require('mongoose');
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({ message: 'Invalid withdrawal ID format.' });
+//     }
+
+//     console.log('Looking for withdrawal with ID:', id);
+    
+//     // Find the withdrawal by ID
+//     const withdrawal = await Withdrawal.findById(id);
+//     console.log('Found withdrawal:', withdrawal);
+
+//     if (!withdrawal) {
+//       return res.status(404).json({ message: 'Withdrawal not found.' });
+//     }
+
+//     // Check if already completed
+//     if (withdrawal.status === 'completed') {
+//       return res.status(400).json({ message: 'Withdrawal is already completed.' });
+//     }
+
+//     console.log('Updating withdrawal status to completed...');
+    
+//     // Update the withdrawal status
+//     withdrawal.status = 'completed';
+//     withdrawal.completedAt = new Date();
+    
+//     // Save the updated withdrawal
+//     const updatedWithdrawal = await withdrawal.save();
+//     console.log('Updated withdrawal:', updatedWithdrawal);
+
+//     res.status(200).json({
+//       message: 'Withdrawal marked as completed successfully.',
+//       withdrawal: updatedWithdrawal,
+//     });
+
+//   } catch (error) {
+//     // Log the complete error for debugging
+//     console.error('Error in withdrawCompletion:');
+//     console.error('Error message:', error.message);
+//     console.error('Error stack:', error.stack);
+    
+//     // Send appropriate error response
+//     if (error.name === 'CastError') {
+//       return res.status(400).json({ message: 'Invalid withdrawal ID format.' });
+//     }
+    
+//     if (error.name === 'ValidationError') {
+//       return res.status(400).json({ message: 'Validation error: ' + error.message });
+//     }
+    
+//     res.status(500).json({ 
+//       message: 'Internal server error while marking withdrawal as complete.',
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// };
+
 exports.withdrawCompletion = async (req, res) => {
   try {
-    console.log('Withdrawal completion request received for ID:', req.params.id);
+    console.log('Withdrawal completion request received:');
+    console.log('Request params:', req.params);
+    console.log('Admin user:', req.user?.id);
     
-    // Validate the ID parameter
-    const { id } = req.params;
-    if (!id) {
+    const { withdrawalId } = req.params;
+    
+    // Validate withdrawal ID
+    if (!withdrawalId) {
       return res.status(400).json({ message: 'Withdrawal ID is required.' });
     }
-
-    // Check if ID is valid MongoDB ObjectId (if using MongoDB)
-    const mongoose = require('mongoose');
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid withdrawal ID format.' });
-    }
-
-    console.log('Looking for withdrawal with ID:', id);
     
-    // Find the withdrawal by ID
-    const withdrawal = await Withdrawal.findById(id);
-    console.log('Found withdrawal:', withdrawal);
-
+    // Check if user is admin (assuming you have admin middleware or role check)
+    // You might want to add this check based on your authentication system
+    // if (!req.user.isAdmin || req.user.role !== 'admin') {
+    //   return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+    // }
+    
+    // Find the withdrawal request
+    const withdrawal = await Withdrawal.findById(withdrawalId).populate('userId', 'email username');
+    
     if (!withdrawal) {
-      return res.status(404).json({ message: 'Withdrawal not found.' });
+      return res.status(404).json({ message: 'Withdrawal request not found.' });
     }
-
-    // Check if already completed
-    if (withdrawal.status === 'completed') {
-      return res.status(400).json({ message: 'Withdrawal is already completed.' });
-    }
-
-    console.log('Updating withdrawal status to completed...');
     
-    // Update the withdrawal status
+    // Check if withdrawal is already completed or rejected
+    if (withdrawal.status === 'completed') {
+      return res.status(400).json({ message: 'Withdrawal request is already completed.' });
+    }
+    
+    if (withdrawal.status === 'rejected') {
+      return res.status(400).json({ message: 'Cannot complete a rejected withdrawal request.' });
+    }
+    
+    // Update withdrawal status to completed
     withdrawal.status = 'completed';
     withdrawal.completedAt = new Date();
     
-    // Save the updated withdrawal
-    const updatedWithdrawal = await withdrawal.save();
-    console.log('Updated withdrawal:', updatedWithdrawal);
-
-    res.status(200).json({
-      message: 'Withdrawal marked as completed successfully.',
-      withdrawal: updatedWithdrawal,
-    });
-
-  } catch (error) {
-    // Log the complete error for debugging
-    console.error('Error in withdrawCompletion:');
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
+    await withdrawal.save();
     
-    // Send appropriate error response
+    console.log(`Withdrawal ${withdrawalId} marked as completed by admin ${req.user.id}`);
+    
+    // Prepare success message based on withdrawal method
+    const successMessage = withdrawal.method === 'CRYPTO' 
+      ? `Crypto withdrawal of ${withdrawal.amountUSD} USDT completed successfully.`
+      : `Bank withdrawal of ₹${withdrawal.amountINR.toFixed(2)} completed successfully.`;
+    
+    // Return success response
+    res.status(200).json({ 
+      message: successMessage,
+      data: {
+        message: successMessage,
+        withdrawal: {
+          id: withdrawal._id,
+          userId: withdrawal.userId._id,
+          userEmail: withdrawal.userId.email,
+          points: withdrawal.points,
+          method: withdrawal.method,
+          status: withdrawal.status,
+          createdAt: withdrawal.createdAt,
+          completedAt: withdrawal.completedAt,
+          ...(withdrawal.method === 'CRYPTO' && { 
+            amountUSD: withdrawal.amountUSD,
+            walletAddress: withdrawal.walletAddress,
+            walletType: withdrawal.walletType
+          }),
+          ...(withdrawal.method === 'BANK' && { 
+            amountINR: withdrawal.amountINR,
+            accountHolderName: withdrawal.accountHolderName,
+            accountNumber: withdrawal.accountNumber,
+            ifscCode: withdrawal.ifscCode,
+            bankName: withdrawal.bankName,
+            branchName: withdrawal.branchName
+          })
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Withdrawal completion error:', error);
+    
+    // Handle specific MongoDB errors
     if (error.name === 'CastError') {
       return res.status(400).json({ message: 'Invalid withdrawal ID format.' });
     }
     
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: 'Validation error: ' + error.message });
-    }
-    
-    res.status(500).json({ 
-      message: 'Internal server error while marking withdrawal as complete.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    res.status(500).json({ message: 'Internal server error during withdrawal completion.' });
   }
 };
 exports.getWithdrawals = async (req, res) => {
