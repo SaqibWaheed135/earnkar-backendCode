@@ -38,6 +38,12 @@ const userSchema = new mongoose.Schema({
   avatar: String,
   points: { type: Number, default: 5 },
   provider: { type: String, default: 'local' }, // 'local', 'google', etc.
+  // ADD THESE NEW FIELDS FOR PASSWORD RESET
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
+  
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('User', userSchema);
