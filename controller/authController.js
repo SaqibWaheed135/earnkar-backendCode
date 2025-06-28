@@ -7,6 +7,8 @@ const path = require('path');
 const Withdrawal = require('../models/Withdraw');
 const AWS = require('aws-sdk');
 const Report = require('../models/Report');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 // exports.signup = async (req, res) => {
 //   const { firstName, lastName, email, password } = req.body;
 
@@ -68,6 +70,182 @@ const Report = require('../models/Report');
 //     res.status(500).json({ message: 'Server Error' });
 //   }
 // };
+
+// Configure nodemailer (you can use Gmail, SendGrid, or any SMTP service)
+const transporter = nodemailer.createTransporter({
+  service: 'gmail', // or your preferred email service
+  auth: {
+    user: process.env.EMAIL_USER, // Your email
+    pass: process.env.EMAIL_PASS, // Your email password or app password
+  },
+});
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Validate email
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User with this email does not exist' });
+    }
+
+    // Check if user signed up with Google/Facebook
+    if (user.provider !== 'local') {
+      return res.status(400).json({
+        message: `This account uses ${user.provider} Sign-In. Password reset is not available for social accounts.`,
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Save reset token to user
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpires;
+    await user.save();
+
+    // Create reset URL (adjust the URL according to your app's deep linking setup)
+    const resetUrl = `myapp://reset-password?token=${resetToken}`;
+    // For web testing, you might use: `http://localhost:3000/reset-password?token=${resetToken}`
+
+    // Email content
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: 'Password Reset Request - EarnKar',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Password Reset Request</h2>
+          <p>Hello ${user.firstName},</p>
+          <p>You requested a password reset for your EarnKar account.</p>
+          <p>Click the button below to reset your password:</p>
+          <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(45deg, #A4508B, #5F0A87); color: white; padding: 12px 24px; text-decoration: none; border-radius: 25px; margin: 20px 0;">Reset Password</a>
+          <p>If the button doesn't work, copy and paste this link in your browser:</p>
+          <p>${resetUrl}</p>
+          <p><strong>This link will expire in 10 minutes.</strong></p>
+          <p>If you didn't request this password reset, please ignore this email.</p>
+          <hr>
+          <p style="color: #666; font-size: 12px;">EarnKar Team</p>
+        </div>
+      `,
+    };
+
+    // Send email
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      message: 'Password reset link sent to your email',
+      // For development/testing, you might want to include the token
+      // Remove this in production
+      ...(process.env.NODE_ENV === 'development' && { resetToken }),
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Error sending password reset email' });
+  }
+};
+
+// 2. VERIFY RESET TOKEN
+exports.verifyResetToken = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    if (!token) {
+      return res.status(400).json({ message: 'Reset token is required' });
+    }
+
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        message: 'Password reset token is invalid or has expired' 
+      });
+    }
+
+    res.status(200).json({
+      message: 'Reset token is valid',
+      email: user.email, // Return email for display purposes
+    });
+
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// 3. RESET PASSWORD
+exports.resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    // Validate input
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        message: 'Password reset token is invalid or has expired' 
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user password and clear reset token
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    // Generate new JWT token for automatic login
+    const jwtToken = jwt.sign(
+      { id: user._id, email: user.email }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      message: 'Password reset successful',
+      token: jwtToken,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        points: user.points,
+        avatar: user.avatar,
+        provider: user.provider,
+      },
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 exports.signup = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
