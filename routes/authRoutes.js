@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { signup, login, getProfile, updateProfile, uploadProfileImage, reward, clerkUserHandler, googleSignIn, withdraw, withdrawCompletion, getWithdrawals, getAllUsers, deleteUser, likeVideo, CommentVideo, ShareVideo,getVideos,handler,AddVideo,approveVideo,getApprovedVideos,deleteVideo,getUserVideos,getUserVideosById, reportVideo, getReportVideo,forgotPassword,verifyResetToken,resetPassword} = require('../controller/authController');
+const { signup, login, getProfile, updateProfile, uploadProfileImage, reward, clerkUserHandler, googleSignIn, withdraw, withdrawCompletion, getWithdrawals, getAllUsers, deleteUser, likeVideo, CommentVideo, ShareVideo,getVideos,handler,AddVideo,approveVideo,getApprovedVideos,deleteVideo,getUserVideos,getUserVideosById, reportVideo, getReportVideo,forgotPassword,verifyResetToken,resetPassword,changePassword} = require('../controller/authController');
 const protect = require('../middleware/authmiddlerware');
 
 router.post('/signup', signup);
@@ -10,7 +10,7 @@ router.get('/verify-reset-token/:token',verifyResetToken);
 router.post('/reset-password', resetPassword);
 
 // Protected route for changing password when logged in
-router.post('/change-password', authMiddleware, authController.changePassword);
+router.post('/change-password', protect, changePassword);
 
 router.get('/profile', protect, getProfile);
 router.get('/getUsers', getAllUsers);
