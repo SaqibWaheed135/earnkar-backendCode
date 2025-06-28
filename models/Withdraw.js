@@ -59,7 +59,7 @@ const WithdrawalSchema = new mongoose.Schema({
   
   status: { 
     type: String, 
-    enum: ['pending', 'completed', 'rejected'],
+    enum: ['pending', 'completed', 'rejected'], // Keep your original lowercase values
     default: 'pending' 
   },
   createdAt: { 
