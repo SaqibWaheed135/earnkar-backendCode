@@ -72,7 +72,7 @@ const nodemailer = require('nodemailer');
 // };
 
 // Configure nodemailer (you can use Gmail, SendGrid, or any SMTP service)
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   service: 'gmail', // or your preferred email service
   auth: {
     user: process.env.EMAIL_USER, // Your email
