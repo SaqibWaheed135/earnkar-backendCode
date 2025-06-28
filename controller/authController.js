@@ -488,35 +488,114 @@ exports.googleSignIn = async (req, res) => {
 
 
 exports.withdraw = async (req, res) => {
-  const { walletAddress, walletType, withdrawPoints } = req.body;
+  try {
+    const { 
+      points, 
+      method, 
+      // Crypto fields
+      walletAddress, 
+      walletType,
+      // Bank fields
+      accountHolderName,
+      accountNumber,
+      ifscCode,
+      bankName,
+      branchName
+    } = req.body;
 
-  if (!withdrawPoints || withdrawPoints < 5) {
-    return res.status(400).json({ message: 'Minimum 5 points required for withdrawal.' });
+    // Validate points
+    if (!points || points < 5) {
+      return res.status(400).json({ message: 'Minimum 5 points required for withdrawal.' });
+    }
+
+    // Validate withdrawal method
+    if (!method || !['CRYPTO', 'BANK'].includes(method)) {
+      return res.status(400).json({ message: 'Invalid withdrawal method.' });
+    }
+
+    // Validate crypto fields if method is CRYPTO
+    if (method === 'CRYPTO') {
+      if (!walletAddress || !walletType) {
+        return res.status(400).json({ message: 'Wallet address and type are required for crypto withdrawal.' });
+      }
+    }
+
+    // Validate bank fields if method is BANK
+    if (method === 'BANK') {
+      if (!accountHolderName || !accountNumber || !ifscCode || !bankName) {
+        return res.status(400).json({ message: 'All bank details are required for bank withdrawal.' });
+      }
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    if (user.points < points) {
+      return res.status(400).json({ message: 'Insufficient points for withdrawal.' });
+    }
+
+    // Calculate amounts
+    const amountUSD = points / 100; // 100 points = 1 USD
+    const amountINR = (points / 100) * 85.42; // 100 points = 85.42 INR
+
+    // Create withdrawal object based on method
+    let withdrawalData = {
+      userId: user._id,
+      points: points,
+      method: method,
+      status: 'PENDING', // Add status field
+      createdAt: new Date()
+    };
+
+    if (method === 'CRYPTO') {
+      withdrawalData = {
+        ...withdrawalData,
+        amountUSD,
+        walletAddress,
+        walletType
+      };
+    } else if (method === 'BANK') {
+      withdrawalData = {
+        ...withdrawalData,
+        amountINR,
+        accountHolderName,
+        accountNumber,
+        ifscCode,
+        bankName,
+        branchName
+      };
+    }
+
+    const withdrawal = new Withdrawal(withdrawalData);
+    await withdrawal.save();
+
+    // Deduct points from user
+    user.points -= points;
+    await user.save();
+
+    // Return success response with appropriate message
+    const successMessage = method === 'CRYPTO' 
+      ? `Withdrawal request of ${amountUSD} USDT submitted successfully.`
+      : `Withdrawal request of ₹${amountINR.toFixed(2)} submitted successfully.`;
+
+    res.status(200).json({ 
+      message: successMessage, 
+      withdrawal: {
+        id: withdrawal._id,
+        points: withdrawal.points,
+        method: withdrawal.method,
+        status: withdrawal.status,
+        ...(method === 'CRYPTO' && { amountUSD: withdrawal.amountUSD }),
+        ...(method === 'BANK' && { amountINR: withdrawal.amountINR })
+      }
+    });
+
+  } catch (error) {
+    console.error('Withdrawal error:', error);
+    res.status(500).json({ message: 'Internal server error during withdrawal process.' });
   }
-
-  const user = await User.findById(req.user.id);
-
-  if (user.points < withdrawPoints) {
-    return res.status(400).json({ message: 'Insufficient points for withdrawal.' });
-  }
-
-  const amountUSD = withdrawPoints / 100; // 100 points = 1 USD
-
-  const withdrawal = new Withdrawal({
-    userId: user._id,
-    points: withdrawPoints,
-    amountUSD,
-    walletAddress,
-    walletType,
-  });
-
-  await withdrawal.save();
-
-  // Deduct only the requested points
-  user.points -= withdrawPoints;
-  await user.save();
-
-  res.status(200).json({ message: 'Withdrawal request submitted.', withdrawal });
 };
 
 exports.withdrawCompletion = async (req, res) => {
