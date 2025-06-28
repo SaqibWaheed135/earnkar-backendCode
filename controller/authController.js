@@ -489,6 +489,11 @@ exports.googleSignIn = async (req, res) => {
 
 exports.withdraw = async (req, res) => {
   try {
+    // Add detailed logging to see what we're receiving
+    console.log('Withdrawal request received:');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('User ID:', req.user?.id);
+    
     const { 
       points, 
       method, 
@@ -504,7 +509,11 @@ exports.withdraw = async (req, res) => {
     } = req.body;
 
     // Validate points
-    if (!points || points < 5) {
+    console.log('Points received:', points, 'Type:', typeof points);
+    const numericPoints = parseInt(points);
+    console.log('Numeric points:', numericPoints);
+    
+    if (!numericPoints || isNaN(numericPoints) || numericPoints < 5) {
       return res.status(400).json({ message: 'Minimum 5 points required for withdrawal.' });
     }
 
@@ -543,9 +552,9 @@ exports.withdraw = async (req, res) => {
     // Create withdrawal object based on method
     let withdrawalData = {
       userId: user._id,
-      points: points,
+      points: numericPoints,
       method: method,
-      status: 'PENDING', // Add status field
+      status: 'pending', // Use lowercase to match your schema
       createdAt: new Date()
     };
 
@@ -581,7 +590,10 @@ exports.withdraw = async (req, res) => {
       : `Withdrawal request of ₹${amountINR.toFixed(2)} submitted successfully.`;
 
     res.status(200).json({ 
-      message: successMessage, 
+      message: successMessage,
+      data: {
+        message: successMessage // Your frontend expects res?.data?.message
+      },
       withdrawal: {
         id: withdrawal._id,
         points: withdrawal.points,
@@ -597,7 +609,6 @@ exports.withdraw = async (req, res) => {
     res.status(500).json({ message: 'Internal server error during withdrawal process.' });
   }
 };
-
 exports.withdrawCompletion = async (req, res) => {
   const withdrawal = await Withdrawal.findById(req.params.id);
 
