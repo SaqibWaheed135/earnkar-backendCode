@@ -911,42 +911,33 @@ exports.withdraw = async (req, res) => {
 exports.withdrawCompletion = async (req, res) => {
   try {
     const withdrawalId = req.params.id;
+    console.log('Withdrawal ID:', withdrawalId);
 
-    console.log(`Marking withdrawal ${withdrawalId} as completed.`);
-
-    // Find the withdrawal by ID
     const withdrawal = await Withdrawal.findById(withdrawalId);
 
     if (!withdrawal) {
       return res.status(404).json({ message: 'Withdrawal not found.' });
     }
 
-    // Check if already completed
     if (withdrawal.status === 'completed') {
-      return res.status(400).json({ message: 'Withdrawal is already completed.' });
+      return res.status(400).json({ message: 'Withdrawal already completed.' });
     }
 
-    // Update the status
-    withdrawal.status = 'completed'; // or `true` if your schema uses boolean
-    withdrawal.completedAt = new Date(); // Optional: Track completion time
+    withdrawal.status = 'completed';
+    withdrawal.completedAt = new Date();
 
-    await withdrawal.save();
+    // Save without triggering validation on other fields
+    await withdrawal.save({ validateBeforeSave: false });
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: 'Withdrawal marked as completed successfully.',
-      withdrawal: {
-        id: withdrawal._id,
-        status: withdrawal.status,
-        completedAt: withdrawal.completedAt
-      }
+      data: { withdrawal }
     });
-
   } catch (error) {
-    console.error('Withdrawal completion error:', error);
+    console.error('❌ Error completing withdrawal:', error);
     res.status(500).json({ message: 'Internal server error while completing withdrawal.' });
   }
 };
-
 
 exports.getWithdrawals = async (req, res) => {
   try {
