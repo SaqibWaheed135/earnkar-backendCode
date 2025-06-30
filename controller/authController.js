@@ -112,7 +112,7 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     // Create reset URL (adjust the URL according to your app's deep linking setup)
-    const resetUrl = `myapp://reset-password?token=${resetToken}`;
+    const resetUrl = `rewardapp://reset-password?token=${resetToken}`;
     // For web testing, you might use: `http://localhost:3000/reset-password?token=${resetToken}`
 
     // Email content
