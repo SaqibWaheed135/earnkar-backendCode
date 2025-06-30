@@ -910,94 +910,44 @@ exports.withdraw = async (req, res) => {
 
 exports.withdrawCompletion = async (req, res) => {
   try {
-    console.log('Withdrawal completion request received:');
-    console.log('Request params:', req.params);
-    console.log('Admin user:', req.user?.id);
-    
-    const { withdrawalId } = req.params;
-    
-    // Validate withdrawal ID
-    if (!withdrawalId) {
-      return res.status(400).json({ message: 'Withdrawal ID is required.' });
-    }
-    
-    // Check if user is admin (assuming you have admin middleware or role check)
-    // You might want to add this check based on your authentication system
-    // if (!req.user.isAdmin || req.user.role !== 'admin') {
-    //   return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
-    // }
-    
-    // Find the withdrawal request
-    const withdrawal = await Withdrawal.findById(withdrawalId).populate('userId', 'email username');
-    
+    const withdrawalId = req.params.id;
+
+    console.log(`Marking withdrawal ${withdrawalId} as completed.`);
+
+    // Find the withdrawal by ID
+    const withdrawal = await Withdrawal.findById(withdrawalId);
+
     if (!withdrawal) {
-      return res.status(404).json({ message: 'Withdrawal request not found.' });
+      return res.status(404).json({ message: 'Withdrawal not found.' });
     }
-    
-    // Check if withdrawal is already completed or rejected
+
+    // Check if already completed
     if (withdrawal.status === 'completed') {
-      return res.status(400).json({ message: 'Withdrawal request is already completed.' });
+      return res.status(400).json({ message: 'Withdrawal is already completed.' });
     }
-    
-    if (withdrawal.status === 'rejected') {
-      return res.status(400).json({ message: 'Cannot complete a rejected withdrawal request.' });
-    }
-    
-    // Update withdrawal status to completed
-    withdrawal.status = 'completed';
-    withdrawal.completedAt = new Date();
-    
+
+    // Update the status
+    withdrawal.status = 'completed'; // or `true` if your schema uses boolean
+    withdrawal.completedAt = new Date(); // Optional: Track completion time
+
     await withdrawal.save();
-    
-    console.log(`Withdrawal ${withdrawalId} marked as completed by admin ${req.user.id}`);
-    
-    // Prepare success message based on withdrawal method
-    const successMessage = withdrawal.method === 'CRYPTO' 
-      ? `Crypto withdrawal of ${withdrawal.amountUSD} USDT completed successfully.`
-      : `Bank withdrawal of ₹${withdrawal.amountINR.toFixed(2)} completed successfully.`;
-    
-    // Return success response
+
     res.status(200).json({ 
-      message: successMessage,
-      data: {
-        message: successMessage,
-        withdrawal: {
-          id: withdrawal._id,
-          userId: withdrawal.userId._id,
-          userEmail: withdrawal.userId.email,
-          points: withdrawal.points,
-          method: withdrawal.method,
-          status: withdrawal.status,
-          createdAt: withdrawal.createdAt,
-          completedAt: withdrawal.completedAt,
-          ...(withdrawal.method === 'CRYPTO' && { 
-            amountUSD: withdrawal.amountUSD,
-            walletAddress: withdrawal.walletAddress,
-            walletType: withdrawal.walletType
-          }),
-          ...(withdrawal.method === 'BANK' && { 
-            amountINR: withdrawal.amountINR,
-            accountHolderName: withdrawal.accountHolderName,
-            accountNumber: withdrawal.accountNumber,
-            ifscCode: withdrawal.ifscCode,
-            bankName: withdrawal.bankName,
-            branchName: withdrawal.branchName
-          })
-        }
+      message: 'Withdrawal marked as completed successfully.',
+      withdrawal: {
+        id: withdrawal._id,
+        status: withdrawal.status,
+        completedAt: withdrawal.completedAt
       }
     });
-    
+
   } catch (error) {
     console.error('Withdrawal completion error:', error);
-    
-    // Handle specific MongoDB errors
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid withdrawal ID format.' });
-    }
-    
-    res.status(500).json({ message: 'Internal server error during withdrawal completion.' });
+    res.status(500).json({ message: 'Internal server error while completing withdrawal.' });
   }
 };
+
+
 exports.getWithdrawals = async (req, res) => {
   try {
     const withdrawals = await Withdrawal.find(req.params.id)
