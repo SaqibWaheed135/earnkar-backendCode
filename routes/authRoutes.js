@@ -21,9 +21,9 @@ router.put('/profile/image', protect, uploadProfileImage);
 router.post('/reward', reward);
 router.post('/clerk-user', clerkUserHandler);
 router.post('/googleSignIn',googleSignIn);
-router.post('/withdraw', protect, withdraw);
+router.post('/withdraw',withdraw);
 // router.post('/withdrawals/:id/complete', withdrawCompletion);
-router.post('/withdrawals/:id/complete', protect, withdrawCompletion);
+router.post('/withdrawals/:id/complete', withdrawCompletion);
 router.get('/withdrawals', getWithdrawals);
 router.post('/likeVideo', likeVideo); // 🔥 add this route
 router.post('/videos/:id/comment', CommentVideo);
