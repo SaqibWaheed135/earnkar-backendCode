@@ -910,31 +910,28 @@ exports.withdraw = async (req, res) => {
 
 exports.withdrawCompletion = async (req, res) => {
   try {
-    const withdrawalId = req.params.id;
-    console.log('Withdrawal ID:', withdrawalId);
+    const { id } = req.params;
 
-    const withdrawal = await Withdrawal.findById(withdrawalId);
+    const result = await Withdrawal.updateOne(
+      { _id: id },
+      {
+        $set: {
+          status: 'completed',
+          completedAt: new Date()
+        }
+      }
+    );
 
-    if (!withdrawal) {
+    if (result.matchedCount === 0 && result.modifiedCount === 0) {
       return res.status(404).json({ message: 'Withdrawal not found.' });
     }
 
-    if (withdrawal.status === 'completed') {
-      return res.status(400).json({ message: 'Withdrawal already completed.' });
-    }
-
-    withdrawal.status = 'completed';
-    withdrawal.completedAt = new Date();
-
-    // Save without triggering validation on other fields
-    await withdrawal.save({ validateBeforeSave: false });
-
     res.status(200).json({
-      message: 'Withdrawal marked as completed successfully.',
-      data: { withdrawal }
+      message: 'Withdrawal marked as completed successfully.'
     });
   } catch (error) {
-    console.error('❌ Error completing withdrawal:', error);
+    console.error('❌ Error completing withdrawal:', error.message);
+    console.error(error.stack);
     res.status(500).json({ message: 'Internal server error while completing withdrawal.' });
   }
 };
