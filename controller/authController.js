@@ -912,8 +912,14 @@ exports.withdrawCompletion = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid withdrawal ID' });
+    }
+
+    // Only update status if it's still pending
     const result = await Withdrawal.updateOne(
-      { _id: id },
+      { _id: id, status: 'pending' }, // only pending withdrawals
       {
         $set: {
           status: 'completed',
@@ -922,20 +928,20 @@ exports.withdrawCompletion = async (req, res) => {
       }
     );
 
-    if (result.matchedCount === 0 && result.modifiedCount === 0) {
-      return res.status(404).json({ message: 'Withdrawal not found.' });
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: 'Withdrawal not found or already completed.' });
     }
 
     res.status(200).json({
-      message: 'Withdrawal marked as completed successfully.'
+      message: '✅ Withdrawal marked as completed successfully.'
     });
+
   } catch (error) {
-    console.error('❌ Error completing withdrawal:', error.message);
+    console.error('❌ Error in withdrawCompletion:', error.message);
     console.error(error.stack);
     res.status(500).json({ message: 'Internal server error while completing withdrawal.' });
   }
 };
-
 exports.getWithdrawals = async (req, res) => {
   try {
     const withdrawals = await Withdrawal.find(req.params.id)
