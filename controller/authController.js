@@ -854,24 +854,25 @@ exports.googleSignIn = async (req, res) => {
 //   }
 // };
 
+
 exports.withdraw = async (req, res) => {
   try {
     const { userId, method, points } = req.body;
 
     if (!userId || !method || !points) {
-      return res.status(400).json({ msg: "userId, method and points are required" });
+      return res.status(400).json({ message: "userId, method and points are required" });
     }
 
     if (points < 100) {
-      return res.status(400).json({ msg: "Minimum 100 points required." });
+      return res.status(400).json({ message: "Minimum 100 points required." });
     }
 
     // find user
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ msg: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.points < points) {
-      return res.status(400).json({ msg: "Insufficient points" });
+      return res.status(400).json({ message: "Insufficient points" });
     }
 
     // prepare withdrawal data
@@ -880,14 +881,14 @@ exports.withdraw = async (req, res) => {
     if (method === "CRYPTO") {
       const { walletAddress, walletType } = req.body;
       if (!walletAddress || !walletType) {
-        return res.status(400).json({ msg: "Wallet details required" });
+        return res.status(400).json({ message: "Wallet details required" });
       }
       withdrawalData.walletAddress = walletAddress;
       withdrawalData.walletType = walletType;
     } else if (method === "BANK") {
       const { accountHolderName, accountNumber, ifscCode, bankName, branchName } = req.body;
       if (!accountHolderName || !accountNumber || !ifscCode || !bankName) {
-        return res.status(400).json({ msg: "Bank details required" });
+        return res.status(400).json({ message: "Bank details required" });
       }
       withdrawalData.accountHolderName = accountHolderName;
       withdrawalData.accountNumber = accountNumber;
@@ -895,7 +896,7 @@ exports.withdraw = async (req, res) => {
       withdrawalData.bankName = bankName;
       withdrawalData.branchName = branchName || "";
     } else {
-      return res.status(400).json({ msg: "Invalid withdrawal method" });
+      return res.status(400).json({ message: "Invalid withdrawal method" });
     }
 
     // deduct points
@@ -906,13 +907,12 @@ exports.withdraw = async (req, res) => {
     const withdrawal = new Withdraw(withdrawalData);
     await withdrawal.save();
 
-    res.json({ msg: "Withdrawal request submitted successfully", withdrawal });
+    res.json({ message: "Withdrawal request submitted successfully", withdrawal });
   } catch (err) {
     console.error("Withdrawal error:", err);
-    res.status(500).json({ msg: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // exports.withdrawCompletion = async (req, res) => {
 //   try {
