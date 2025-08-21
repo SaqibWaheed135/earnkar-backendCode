@@ -1156,12 +1156,12 @@ exports.withdrawCompletion = async (req, res) => {
       return res.status(400).json({ message: 'Invalid withdrawal ID' });
     }
 
-    // Only update status if it's still pending
+    // Only update status if it's still PENDING
     const result = await Withdrawal.updateOne(
-      { _id: id, status: 'pending' }, // only pending withdrawals
+      { _id: id, status: 'PENDING' }, // match status correctly
       {
         $set: {
-          status: 'completed',
+          status: 'COMPLETED',
           completedAt: new Date()
         }
       }
@@ -1172,15 +1172,19 @@ exports.withdrawCompletion = async (req, res) => {
     }
 
     res.status(200).json({
+      success: true,
       message: '✅ Withdrawal marked as completed successfully.'
     });
 
   } catch (error) {
     console.error('❌ Error in withdrawCompletion:', error.message);
     console.error(error.stack);
-    res.status(500).json({ message: 'Internal server error while completing withdrawal.' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error while completing withdrawal.',
+      error: error.message 
+    });
   }
- 
 };
 
 // exports.getWithdrawals = async (req, res) => {
