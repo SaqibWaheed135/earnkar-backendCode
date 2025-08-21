@@ -1022,6 +1022,16 @@ exports.withdraw = async (req, res) => {
 
         // Create withdrawal record
         const withdrawal = new Withdrawal(withdrawalData);
+        
+        // Calculate amounts manually before saving
+        if (method === 'CRYPTO') {
+            withdrawal.usdtAmount = numericPoints / 100;
+            withdrawal.inrAmount = 0;
+        } else if (method === 'BANK') {
+            withdrawal.inrAmount = (numericPoints / 100) * 85.42;
+            withdrawal.usdtAmount = 0;
+        }
+        
         await withdrawal.save();
 
         // Deduct points from user account
