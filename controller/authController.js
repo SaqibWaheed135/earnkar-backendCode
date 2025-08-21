@@ -917,6 +917,7 @@ exports.googleSignIn = async (req, res) => {
 exports.withdraw = async (req, res) => {
     try {
         console.log('Withdrawal request received:', req.body);
+        console.log('Request headers:', req.headers);
         
         const { userId, points, method } = req.body;
         
@@ -1054,15 +1055,19 @@ exports.withdraw = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Withdrawal error:', error);
+        console.error('Withdrawal error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
         res.status(500).json({ 
             success: false,
             message: 'Internal server error. Please try again later.',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: error.message, // Always show error message for debugging
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
-
 
 // exports.withdrawCompletion = async (req, res) => {
 //   try {
