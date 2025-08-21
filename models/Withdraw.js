@@ -9,7 +9,7 @@ const WithdrawalSchema = new mongoose.Schema({
   points: { 
     type: Number, 
     required: true,
-    min: 5
+    min: 100
   },
   method: {
     type: String,
