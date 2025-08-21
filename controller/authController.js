@@ -9,6 +9,8 @@ const AWS = require('aws-sdk');
 const Report = require('../models/Report');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const mongoose = require('mongoose');
+
 // exports.signup = async (req, res) => {
 //   const { firstName, lastName, email, password } = req.body;
 
