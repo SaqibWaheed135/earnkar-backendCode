@@ -836,7 +836,8 @@ exports.withdraw = async (req, res) => {
 
   } catch (error) {
     console.error('Withdrawal error:', error);
-    res.status(500).json({ message: 'Internal server error during withdrawal process.' });
+     return res.status(500).json({ message: error.message || 'Internal server error during withdrawal process.' });
+
   }
 };
 
