@@ -170,15 +170,11 @@ const withdrawalSchema = new mongoose.Schema({
     },
     usdtAmount: {
         type: Number,
-        required: function() {
-            return this.method === 'CRYPTO';
-        }
+        default: 0
     },
     inrAmount: {
         type: Number,
-        required: function() {
-            return this.method === 'BANK';
-        }
+        default: 0
     },
     
     // Admin fields
