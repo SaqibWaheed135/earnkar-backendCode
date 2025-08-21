@@ -717,142 +717,202 @@ exports.googleSignIn = async (req, res) => {
 // }
 
 
+// exports.withdraw = async (req, res) => {
+//   try {
+//     // Add detailed logging to see what we're receiving
+//     console.log('Withdrawal request received:');
+//     console.log('Request body:', JSON.stringify(req.body, null, 2));
+//     console.log('User ID:', req.user?.id);
+    
+//     const { 
+//       points, 
+//       method, 
+//       // Crypto fields
+//       walletAddress, 
+//       walletType,
+//       // Bank fields
+//       accountHolderName,
+//       accountNumber,
+//       ifscCode,
+//       bankName,
+//       branchName
+//     } = req.body;
+
+//     // Validate points
+//     console.log('Points received:', points, 'Type:', typeof points);
+//     const numericPoints = parseInt(points);
+//     console.log('Numeric points:', numericPoints);
+    
+//     if (!numericPoints || isNaN(numericPoints) || numericPoints < 100) {
+//       return res.status(400).json({ message: 'Minimum 100 points required for withdrawal.' });
+//     }
+
+//     // Validate withdrawal method
+//     if (!method || !['CRYPTO', 'BANK'].includes(method)) {
+//       return res.status(400).json({ message: 'Invalid withdrawal method.' });
+//     }
+
+//     // Validate crypto fields if method is CRYPTO
+//     if (method === 'CRYPTO') {
+//       if (!walletAddress || !walletType) {
+//         return res.status(400).json({ message: 'Wallet address and type are required for crypto withdrawal.' });
+//       }
+//     }
+
+//     // Validate bank fields if method is BANK
+//     if (method === 'BANK') {
+//       if (!accountHolderName || !accountNumber || !ifscCode || !bankName) {
+//         return res.status(400).json({ message: 'All bank details are required for bank withdrawal.' });
+//       }
+//     }
+
+//     const user = await User.findById(req.user.id);
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found.' });
+//     }
+
+//     if (user.points < points) {
+//       return res.status(400).json({ message: 'Insufficient points for withdrawal.' });
+//     }
+
+//     // Calculate amounts
+//     const amountUSD = points / 100; // 100 points = 1 USD
+//     const amountINR = (points / 100) * 85.42; // 100 points = 85.42 INR
+
+//     // Create withdrawal object based on method
+//     let withdrawalData = {
+//       userId: user._id,
+//       points: numericPoints,
+//       method: method,
+//       status: 'pending', // Use lowercase to match your schema
+//       createdAt: new Date()
+//     };
+
+//     if (method === 'CRYPTO') {
+//       withdrawalData = {
+//         ...withdrawalData,
+//         amountUSD,
+//         walletAddress,
+//         walletType
+//       };
+//     } else if (method === 'BANK') {
+//       withdrawalData = {
+//         ...withdrawalData,
+//         amountINR,
+//         accountHolderName,
+//         accountNumber,
+//         ifscCode,
+//         bankName,
+//         branchName
+//       };
+//     }
+
+//     const withdrawal = new Withdrawal(withdrawalData);
+//     await withdrawal.save();
+
+//     // Deduct points from user
+//     user.points -= points;
+//     await user.save();
+
+//     // Return success response with appropriate message
+//     const successMessage = method === 'CRYPTO' 
+//       ? `Withdrawal request of ${amountUSD} USDT submitted successfully.`
+//       : `Withdrawal request of ₹${amountINR.toFixed(2)} submitted successfully.`;
+
+//     // res.status(200).json({ 
+//     //   message: successMessage,
+//     //   data: {
+//     //     message: successMessage // Your frontend expects res?.data?.message
+//     //   },
+//     //   withdrawal: {
+//     //     id: withdrawal._id,
+//     //     points: withdrawal.points,
+//     //     method: withdrawal.method,
+//     //     status: withdrawal.status,
+//     //     ...(method === 'CRYPTO' && { amountUSD: withdrawal.amountUSD }),
+//     //     ...(method === 'BANK' && { amountINR: withdrawal.amountINR })
+//     //   }
+//     // });
+
+//     res.status(200).json({
+//   message: successMessage,
+//   withdrawal: {
+//     id: withdrawal._id,
+//     points: withdrawal.points,
+//     method: withdrawal.method,
+//     status: withdrawal.status,
+//     ...(method === 'CRYPTO' && { amountUSD: withdrawal.amountUSD }),
+//     ...(method === 'BANK' && { amountINR: withdrawal.amountINR })
+//   }
+// });
+
+
+//   } catch (error) {
+//     console.error('Withdrawal error:', error);
+//      return res.status(500).json({ message: error.message || 'Internal server error during withdrawal process.' });
+
+//   }
+// };
+
 exports.withdraw = async (req, res) => {
   try {
-    // Add detailed logging to see what we're receiving
-    console.log('Withdrawal request received:');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    console.log('User ID:', req.user?.id);
-    
-    const { 
-      points, 
-      method, 
-      // Crypto fields
-      walletAddress, 
-      walletType,
-      // Bank fields
-      accountHolderName,
-      accountNumber,
-      ifscCode,
-      bankName,
-      branchName
-    } = req.body;
+    const { userId, method, points } = req.body;
 
-    // Validate points
-    console.log('Points received:', points, 'Type:', typeof points);
-    const numericPoints = parseInt(points);
-    console.log('Numeric points:', numericPoints);
-    
-    if (!numericPoints || isNaN(numericPoints) || numericPoints < 100) {
-      return res.status(400).json({ message: 'Minimum 100 points required for withdrawal.' });
+    if (!userId || !method || !points) {
+      return res.status(400).json({ msg: "userId, method and points are required" });
     }
 
-    // Validate withdrawal method
-    if (!method || !['CRYPTO', 'BANK'].includes(method)) {
-      return res.status(400).json({ message: 'Invalid withdrawal method.' });
+    if (points < 100) {
+      return res.status(400).json({ msg: "Minimum 100 points required." });
     }
 
-    // Validate crypto fields if method is CRYPTO
-    if (method === 'CRYPTO') {
-      if (!walletAddress || !walletType) {
-        return res.status(400).json({ message: 'Wallet address and type are required for crypto withdrawal.' });
-      }
-    }
-
-    // Validate bank fields if method is BANK
-    if (method === 'BANK') {
-      if (!accountHolderName || !accountNumber || !ifscCode || !bankName) {
-        return res.status(400).json({ message: 'All bank details are required for bank withdrawal.' });
-      }
-    }
-
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
+    // find user
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ msg: "User not found" });
 
     if (user.points < points) {
-      return res.status(400).json({ message: 'Insufficient points for withdrawal.' });
+      return res.status(400).json({ msg: "Insufficient points" });
     }
 
-    // Calculate amounts
-    const amountUSD = points / 100; // 100 points = 1 USD
-    const amountINR = (points / 100) * 85.42; // 100 points = 85.42 INR
+    // prepare withdrawal data
+    let withdrawalData = { user: userId, method, points };
 
-    // Create withdrawal object based on method
-    let withdrawalData = {
-      userId: user._id,
-      points: numericPoints,
-      method: method,
-      status: 'pending', // Use lowercase to match your schema
-      createdAt: new Date()
-    };
-
-    if (method === 'CRYPTO') {
-      withdrawalData = {
-        ...withdrawalData,
-        amountUSD,
-        walletAddress,
-        walletType
-      };
-    } else if (method === 'BANK') {
-      withdrawalData = {
-        ...withdrawalData,
-        amountINR,
-        accountHolderName,
-        accountNumber,
-        ifscCode,
-        bankName,
-        branchName
-      };
+    if (method === "CRYPTO") {
+      const { walletAddress, walletType } = req.body;
+      if (!walletAddress || !walletType) {
+        return res.status(400).json({ msg: "Wallet details required" });
+      }
+      withdrawalData.walletAddress = walletAddress;
+      withdrawalData.walletType = walletType;
+    } else if (method === "BANK") {
+      const { accountHolderName, accountNumber, ifscCode, bankName, branchName } = req.body;
+      if (!accountHolderName || !accountNumber || !ifscCode || !bankName) {
+        return res.status(400).json({ msg: "Bank details required" });
+      }
+      withdrawalData.accountHolderName = accountHolderName;
+      withdrawalData.accountNumber = accountNumber;
+      withdrawalData.ifscCode = ifscCode;
+      withdrawalData.bankName = bankName;
+      withdrawalData.branchName = branchName || "";
+    } else {
+      return res.status(400).json({ msg: "Invalid withdrawal method" });
     }
 
-    const withdrawal = new Withdrawal(withdrawalData);
-    await withdrawal.save();
-
-    // Deduct points from user
+    // deduct points
     user.points -= points;
     await user.save();
 
-    // Return success response with appropriate message
-    const successMessage = method === 'CRYPTO' 
-      ? `Withdrawal request of ${amountUSD} USDT submitted successfully.`
-      : `Withdrawal request of ₹${amountINR.toFixed(2)} submitted successfully.`;
+    // create withdrawal record
+    const withdrawal = new Withdraw(withdrawalData);
+    await withdrawal.save();
 
-    // res.status(200).json({ 
-    //   message: successMessage,
-    //   data: {
-    //     message: successMessage // Your frontend expects res?.data?.message
-    //   },
-    //   withdrawal: {
-    //     id: withdrawal._id,
-    //     points: withdrawal.points,
-    //     method: withdrawal.method,
-    //     status: withdrawal.status,
-    //     ...(method === 'CRYPTO' && { amountUSD: withdrawal.amountUSD }),
-    //     ...(method === 'BANK' && { amountINR: withdrawal.amountINR })
-    //   }
-    // });
-
-    res.status(200).json({
-  message: successMessage,
-  withdrawal: {
-    id: withdrawal._id,
-    points: withdrawal.points,
-    method: withdrawal.method,
-    status: withdrawal.status,
-    ...(method === 'CRYPTO' && { amountUSD: withdrawal.amountUSD }),
-    ...(method === 'BANK' && { amountINR: withdrawal.amountINR })
-  }
-});
-
-
-  } catch (error) {
-    console.error('Withdrawal error:', error);
-     return res.status(500).json({ message: error.message || 'Internal server error during withdrawal process.' });
-
+    res.json({ msg: "Withdrawal request submitted successfully", withdrawal });
+  } catch (err) {
+    console.error("Withdrawal error:", err);
+    res.status(500).json({ msg: "Server error" });
   }
 };
+
 
 // exports.withdrawCompletion = async (req, res) => {
 //   try {
