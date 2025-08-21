@@ -1148,38 +1148,87 @@ exports.withdraw = async (req, res) => {
 // };
 
 exports.withdrawCompletion = async (req, res) => {
+  // try {
+  //   const { id } = req.params;
+
+  //   // Validate ObjectId
+  //   if (!mongoose.Types.ObjectId.isValid(id)) {
+  //     return res.status(400).json({ message: 'Invalid withdrawal ID' });
+  //   }
+
+  //   // Only update status if it's still pending
+  //   const result = await Withdrawal.updateOne(
+  //     { _id: id, status: 'pending' }, // only pending withdrawals
+  //     {
+  //       $set: {
+  //         status: 'completed',
+  //         completedAt: new Date()
+  //       }
+  //     }
+  //   );
+
+  //   if (result.matchedCount === 0) {
+  //     return res.status(404).json({ message: 'Withdrawal not found or already completed.' });
+  //   }
+
+  //   res.status(200).json({
+  //     message: '✅ Withdrawal marked as completed successfully.'
+  //   });
+
+  // } catch (error) {
+  //   console.error('❌ Error in withdrawCompletion:', error.message);
+  //   console.error(error.stack);
+  //   res.status(500).json({ message: 'Internal server error while completing withdrawal.' });
+  // }
   try {
-    const { id } = req.params;
+        const { withdrawalId } = req.params;
+        const { status, adminNotes, processedBy } = req.body;
 
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid withdrawal ID' });
-    }
-
-    // Only update status if it's still pending
-    const result = await Withdrawal.updateOne(
-      { _id: id, status: 'pending' }, // only pending withdrawals
-      {
-        $set: {
-          status: 'completed',
-          completedAt: new Date()
+        if (!status || !['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED'].includes(status)) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Invalid status. Must be PENDING, APPROVED, REJECTED, or COMPLETED' 
+            });
         }
-      }
-    );
 
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: 'Withdrawal not found or already completed.' });
+        const withdrawal = await Withdrawal.findById(withdrawalId);
+        if (!withdrawal) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Withdrawal not found' 
+            });
+        }
+
+        // If rejecting, refund points to user
+        if (status === 'REJECTED' && withdrawal.status !== 'REJECTED') {
+            const user = await User.findById(withdrawal.userId);
+            if (user) {
+                user.points += withdrawal.points;
+                await user.save();
+            }
+        }
+
+        withdrawal.status = status;
+        withdrawal.adminNotes = adminNotes || withdrawal.adminNotes;
+        withdrawal.processedBy = processedBy || withdrawal.processedBy;
+        withdrawal.processedAt = new Date();
+        
+        await withdrawal.save();
+
+        res.json({
+            success: true,
+            message: `Withdrawal ${status.toLowerCase()} successfully`,
+            data: withdrawal
+        });
+
+    } catch (error) {
+        console.error('Update withdrawal status error:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error updating withdrawal status',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
-
-    res.status(200).json({
-      message: '✅ Withdrawal marked as completed successfully.'
-    });
-
-  } catch (error) {
-    console.error('❌ Error in withdrawCompletion:', error.message);
-    console.error(error.stack);
-    res.status(500).json({ message: 'Internal server error while completing withdrawal.' });
-  }
 };
 
 // exports.getWithdrawals = async (req, res) => {
