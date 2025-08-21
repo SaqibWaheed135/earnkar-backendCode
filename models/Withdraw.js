@@ -222,4 +222,4 @@ withdrawalSchema.pre('save', function(next) {
     next();
 });
 
-module.exports = mongoose.model('Withdrawal', withdrawalSchema);
+module.exports = mongoose.model('Withdraw', withdrawalSchema);
