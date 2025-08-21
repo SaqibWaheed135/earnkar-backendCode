@@ -17,41 +17,33 @@ const WithdrawalSchema = new mongoose.Schema({
     required: true
   },
   
-  // Crypto withdrawal fields
+  // Crypto withdrawal fields (optional in schema, validated in API)
   amountUSD: { 
-    type: Number, 
-    required: function() { return this.method === 'CRYPTO'; }
+    type: Number
   },
   walletAddress: { 
-    type: String, 
-    required: function() { return this.method === 'CRYPTO'; }
+    type: String
   },
   walletType: { 
     type: String, 
-    enum: ['TRC20', 'ERC20', 'BEP20'],
-    required: function() { return this.method === 'CRYPTO'; }
+    enum: ['TRC20', 'ERC20', 'BEP20']
   },
   
-  // Bank withdrawal fields
+  // Bank withdrawal fields (optional in schema, validated in API)
   amountINR: {
-    type: Number,
-    required: function() { return this.method === 'BANK'; }
+    type: Number
   },
   accountHolderName: {
-    type: String,
-    required: function() { return this.method === 'BANK'; }
+    type: String
   },
   accountNumber: {
-    type: String,
-    required: function() { return this.method === 'BANK'; }
+    type: String
   },
   ifscCode: {
-    type: String,
-    required: function() { return this.method === 'BANK'; }
+    type: String
   },
   bankName: {
-    type: String,
-    required: function() { return this.method === 'BANK'; }
+    type: String
   },
   branchName: {
     type: String
@@ -59,7 +51,7 @@ const WithdrawalSchema = new mongoose.Schema({
   
   status: { 
     type: String, 
-    enum: ['pending', 'completed', 'rejected'], // Keep your original lowercase values
+    enum: ['pending', 'completed', 'rejected'],
     default: 'pending' 
   },
   createdAt: { 
