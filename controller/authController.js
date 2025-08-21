@@ -1181,18 +1181,60 @@ exports.withdrawCompletion = async (req, res) => {
     res.status(500).json({ message: 'Internal server error while completing withdrawal.' });
   }
 };
-exports.getWithdrawals = async (req, res) => {
-  try {
-    const withdrawals = await Withdrawal.find(req.params.id)
-      .sort({ createdAt: -1 }) // latest first
-      .populate('userId', 'email firstName lastName') // include user info
-      .lean();
 
-    res.status(200).json({ data: withdrawals });
-  } catch (err) {
-    console.error('Error fetching withdrawals:', err);
-    res.status(500).json({ message: 'Failed to fetch withdrawals' });
-  }
+// exports.getWithdrawals = async (req, res) => {
+//   try {
+//     const withdrawals = await Withdrawal.find(req.params.id)
+//       .sort({ createdAt: -1 }) // latest first
+//       .populate('userId', 'email firstName lastName') // include user info
+//       .lean();
+
+//     res.status(200).json({ data: withdrawals });
+//   } catch (err) {
+//     console.error('Error fetching withdrawals:', err);
+//     res.status(500).json({ message: 'Failed to fetch withdrawals' });
+//   }
+// };
+
+exports.getWithdrawals = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const status = req.query.status || null;
+        const skip = (page - 1) * limit;
+
+        let filter = {};
+        if (status && ['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED'].includes(status)) {
+            filter.status = status;
+        }
+
+        const withdrawals = await Withdrawal.find(filter)
+            .populate('userId', 'firstName lastName email')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const total = await Withdrawal.countDocuments(filter);
+
+        res.json({
+            success: true,
+            data: withdrawals,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(total / limit),
+                totalItems: total,
+                itemsPerPage: limit
+            }
+        });
+
+    } catch (error) {
+        console.error('Get all withdrawals error:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error fetching withdrawals',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
 };
 
 //Videos
