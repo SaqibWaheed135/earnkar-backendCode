@@ -744,7 +744,7 @@ exports.withdraw = async (req, res) => {
     console.log('Numeric points:', numericPoints);
     
     if (!numericPoints || isNaN(numericPoints) || numericPoints < 100) {
-      return res.status(400).json({ message: 'Minimum 5 points required for withdrawal.' });
+      return res.status(400).json({ message: 'Minimum 100 points required for withdrawal.' });
     }
 
     // Validate withdrawal method
