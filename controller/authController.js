@@ -819,20 +819,33 @@ exports.withdraw = async (req, res) => {
       ? `Withdrawal request of ${amountUSD} USDT submitted successfully.`
       : `Withdrawal request of ₹${amountINR.toFixed(2)} submitted successfully.`;
 
-    res.status(200).json({ 
-      message: successMessage,
-      data: {
-        message: successMessage // Your frontend expects res?.data?.message
-      },
-      withdrawal: {
-        id: withdrawal._id,
-        points: withdrawal.points,
-        method: withdrawal.method,
-        status: withdrawal.status,
-        ...(method === 'CRYPTO' && { amountUSD: withdrawal.amountUSD }),
-        ...(method === 'BANK' && { amountINR: withdrawal.amountINR })
-      }
-    });
+    // res.status(200).json({ 
+    //   message: successMessage,
+    //   data: {
+    //     message: successMessage // Your frontend expects res?.data?.message
+    //   },
+    //   withdrawal: {
+    //     id: withdrawal._id,
+    //     points: withdrawal.points,
+    //     method: withdrawal.method,
+    //     status: withdrawal.status,
+    //     ...(method === 'CRYPTO' && { amountUSD: withdrawal.amountUSD }),
+    //     ...(method === 'BANK' && { amountINR: withdrawal.amountINR })
+    //   }
+    // });
+
+    res.status(200).json({
+  message: successMessage,
+  withdrawal: {
+    id: withdrawal._id,
+    points: withdrawal.points,
+    method: withdrawal.method,
+    status: withdrawal.status,
+    ...(method === 'CRYPTO' && { amountUSD: withdrawal.amountUSD }),
+    ...(method === 'BANK' && { amountINR: withdrawal.amountINR })
+  }
+});
+
 
   } catch (error) {
     console.error('Withdrawal error:', error);
